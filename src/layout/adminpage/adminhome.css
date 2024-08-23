@@ -1,0 +1,14 @@
+/* styles.css or your relevant CSS file */
+.fade-in {
+    animation: fadeIn 2s ease-out;
+  }
+  
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  
