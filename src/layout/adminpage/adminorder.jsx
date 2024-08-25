@@ -3,7 +3,9 @@ import axios from 'axios';
 
 const OrdersPage = () => {
     const [orders, setOrders] = useState([]);
-    const [expandedOrderId, setExpandedOrderId] = useState(null); // State for expanded order
+    const [expandedOrderId, setExpandedOrderId] = useState(null);
+    const [statusOptions] = useState(['กำลังดำเนินการ', 'กำลังเตรียนจัดส่ง', 'กำลังจัดส่ง', 'สำเร็จ']); // Define status options
+    const [selectedStatus, setSelectedStatus] = useState({}); // Track selected status for each order
     const token = localStorage.getItem('token');
 
     useEffect(() => {
@@ -27,6 +29,34 @@ const OrdersPage = () => {
         setExpandedOrderId(expandedOrderId === orderId ? null : orderId);
     };
 
+    const handleChangeStatus = (orderId, newStatus) => {
+        setSelectedStatus(prevState => ({
+            ...prevState,
+            [orderId]: newStatus,
+        }));
+    };
+
+    const handleUpdateStatus = async (orderId) => {
+        try {
+            const response = await axios.put('http://localhost:8889/auth/updateorderstatus', 
+            {
+                orderId,
+                status: selectedStatus[orderId],
+            }, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+            // Update orders state with the updated order
+            setOrders(prevOrders =>
+                prevOrders.map(order => order.orderId === orderId ? { ...order, status: selectedStatus[orderId] } : order)
+            );
+            console.log(response.data.msg);
+        } catch (error) {
+            console.error('Error updating order status:', error);
+        }
+    };
+
     return (
         <div className="p-6 bg-gray-100 min-h-screen">
             <h1 className="text-3xl font-bold mb-6">คำสั่งซื้อทั้งหมด</h1>
@@ -47,10 +77,21 @@ const OrdersPage = () => {
                                 </div>
                                 <div className="flex-1 ml-4">
                                     <h2 className="text-xl font-semibold mb-2">Order ID: {order.orderId}</h2>
-                                    <p><strong>Status:</strong> {order.status}</p>
+                                    <p><strong>Status:</strong> 
+                                        <select 
+                                            value={selectedStatus[order.orderId] || order.status}
+                                            onChange={(e) => handleChangeStatus(order.orderId, e.target.value)}
+                                            className="ml-2 p-1 border rounded"
+                                        >
+                                            {statusOptions.map(option => (
+                                                <option key={option} value={option}>{option}</option>
+                                            ))}
+                                        </select>
+                                    </p>
                                     <p><strong>User ID:</strong> {order.userId}</p>
                                     <p><strong>Payment Method:</strong> {order.pay}</p>
                                     <p><strong>Total Price:</strong> {order.order.price_all} บาท</p>
+                                    <p><strong>สถานะ:</strong> {order.order.status} </p>
                                     <p><strong>Date:</strong> {new Date(order.order.date).toLocaleDateString()}</p>
                                     {expandedOrderId === order.orderId && (
                                         <div className="mt-4">
@@ -81,6 +122,12 @@ const OrdersPage = () => {
                                         className="mt-4 text-blue-500 hover:text-blue-700 focus:outline-none"
                                     >
                                         {expandedOrderId === order.orderId ? 'ย่อ' : 'ดูข้อมูลทั้งหมด'}
+                                    </button>
+                                    <button
+                                        onClick={() => handleUpdateStatus(order.orderId)}
+                                        className="ml-4 mt-4 text-green-500 hover:text-green-700 focus:outline-none"
+                                    >
+                                        อัปเดตสถานะ
                                     </button>
                                 </div>
                             </div>

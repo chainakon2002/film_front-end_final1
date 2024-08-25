@@ -46,7 +46,7 @@ function Paymentcarts() {
             const rs = await axios.post('http://localhost:8889/order/order', {
                 total_all: tl,
                 price_all: pr,
-                status: 'กำลังจัดส่ง',
+                status: 'กำลังดำเนินการ',
                 date: new Date()
             });
             console.log(rs.data);

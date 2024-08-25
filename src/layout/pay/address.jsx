@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { FaEdit } from 'react-icons/fa';
+import provincesData from '../data/json/thai_provinces.json';
+import amphuresData from '../data/json/thai_amphures.json';
+import tambonsData from '../data/json/thai_tambons.json';
 
 const UserProfile = ({ id }) => {
   const [user, setUser] = useState(null);
@@ -17,9 +20,12 @@ const UserProfile = ({ id }) => {
     zipcode: '',
     other: ''
   });
-  const [editAddress, setEditAddress] = useState(null); // State for managing address being edited
-  const [isModalOpen, setIsModalOpen] = useState(false); // State for controlling new address modal visibility
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false); // State for controlling edit address modal visibility
+  const [filteredAmphures, setFilteredAmphures] = useState([]);
+  const [filteredTambons, setFilteredTambons] = useState([]);
+  const [zipcode, setZipcode] = useState('');
+  const [editAddress, setEditAddress] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -42,17 +48,75 @@ const UserProfile = ({ id }) => {
     fetchUser();
   }, [id]);
 
-  const handleChange = (e) => {
+  const handleProvinceChange = (e) => {
     const { name, value } = e.target;
-    setNewAddress(prevState => ({
+    setNewAddress((prevState) => ({
+      ...prevState,
+      [name]: value,
+      district: '', // Reset district when province changes
+      tambon: '', // Reset tambon when province changes
+      zipcode: '' // Reset zipcode when province changes
+    }));
+
+    const selectedProvince = provincesData.find(
+      (province) => province.name_th === value
+    );
+    if (selectedProvince) {
+      const filteredAmphures = amphuresData.filter(
+        (amphur) => amphur.province_id === selectedProvince.id
+      );
+      setFilteredAmphures(filteredAmphures);
+      setFilteredTambons([]); // Clear tambons when province changes
+      setZipcode(''); // Clear zipcode when province changes
+    } else {
+      setFilteredAmphures([]);
+      setFilteredTambons([]);
+      setZipcode('');
+    }
+  };
+
+  const handleDistrictChange = (e) => {
+    const { name, value } = e.target;
+    setNewAddress((prevState) => ({
+      ...prevState,
+      [name]: value,
+      tambon: '' // Reset tambon when district changes
+    }));
+
+    const selectedAmphur = filteredAmphures.find(
+      (amphur) => amphur.name_th === value
+    );
+    if (selectedAmphur) {
+      const filteredTambons = tambonsData.filter(
+        (tambon) => tambon.amphure_id === selectedAmphur.id
+      );
+      setFilteredTambons(filteredTambons);
+    } else {
+      setFilteredTambons([]);
+      setZipcode('');
+    }
+  };
+
+  const handleTambonChange = (e) => {
+    const { name, value } = e.target;
+    setNewAddress((prevState) => ({
       ...prevState,
       [name]: value
     }));
+
+    const selectedTambon = tambonsData.find(
+      (tambon) => tambon.name_th === value
+    );
+    if (selectedTambon) {
+      setZipcode(selectedTambon.zip_code);
+    } else {
+      setZipcode('');
+    }
   };
 
-  const handleEditChange = (e) => {
+  const handleChange = (e) => {
     const { name, value } = e.target;
-    setEditAddress(prevState => ({
+    setNewAddress((prevState) => ({
       ...prevState,
       [name]: value
     }));
@@ -62,10 +126,13 @@ const UserProfile = ({ id }) => {
     e.preventDefault();
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.post(`http://localhost:8889/auth/addUserAddress`, newAddress, {
+      const response = await axios.post(`http://localhost:8889/auth/addUserAddress`, {
+        ...newAddress,
+        zipcode
+      }, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      setAddresses(prevAddresses => [...prevAddresses, response.data]);
+      setAddresses((prevAddresses) => [...prevAddresses, response.data]);
       setNewAddress({
         name: '',
         lastname: '',
@@ -84,26 +151,52 @@ const UserProfile = ({ id }) => {
     }
   };
 
+  const openEditModal = (address) => {
+    setEditAddress(address);
+    setIsEditModalOpen(true);
+  };
+
+  const handleEditChange = (e) => {
+    const { name, value } = e.target;
+    setEditAddress((prevState) => ({
+      ...prevState,
+      [name]: value
+    }));
+
+    if (name === 'tambon') {
+      const selectedTambon = tambonsData.find(
+        (tambon) => tambon.name_th === value
+      );
+      if (selectedTambon) {
+        setEditAddress((prevState) => ({
+          ...prevState,
+          zipcode: selectedTambon.zip_code
+        }));
+      } else {
+        setEditAddress((prevState) => ({
+          ...prevState,
+          zipcode: ''
+        }));
+      }
+    }
+  };
+
   const handleEditSubmit = async (e) => {
     e.preventDefault();
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.put(`http://localhost:8889/auth/updateUserAddress/${editAddress.id}`, editAddress, {
+      await axios.put(`http://localhost:8889/auth/updateUserAddress/${editAddress.id}`, editAddress, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      setAddresses(prevAddresses =>
-        prevAddresses.map(addr => addr.id === response.data.id ? response.data : addr)
+      setAddresses((prevAddresses) =>
+        prevAddresses.map((address) =>
+          address.id === editAddress.id ? editAddress : address
+        )
       );
-      setEditAddress(null);
-      setIsEditModalOpen(false); // Close edit modal after updating address
+      setIsEditModalOpen(false); // Close modal after editing address
     } catch (error) {
-      console.error('Error updating address:', error);
+      console.error('Error editing address:', error);
     }
-  };
-
-  const openEditModal = (address) => {
-    setEditAddress(address);
-    setIsEditModalOpen(true);
   };
 
   return (
@@ -120,7 +213,7 @@ const UserProfile = ({ id }) => {
         addresses.map((address, index) => (
           <div key={index} className="mb-6 p-6 border border-gray-200 rounded-lg shadow-sm bg-gray-50">
             <h2 className="text-xl font-semibold text-gray-800 mb-2">Address {index + 1}</h2>
-            <p className="text-gray-700"><strong>Name:</strong> {address.name}</p>
+            <p className="text-gray-700"><strong>Name:</strong> {address.name} {address.lastname}</p>
             <p className="text-gray-700"><strong>Phone:</strong> {address.phone}</p>
             <p className="text-gray-700"><strong>Province:</strong> {address.province}</p>
             <p className="text-gray-700"><strong>District:</strong> {address.district}</p>
@@ -149,235 +242,265 @@ const UserProfile = ({ id }) => {
         Add New Address
       </button>
 
-      {/* New Address Modal */}
-      {isModalOpen && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center">
-          <div className="bg-white p-8 rounded-lg shadow-lg w-full max-w-lg overflow-y-auto max-h-[80vh]">
-            <h2 className="text-2xl font-bold text-gray-800 mb-6">Add New Address</h2>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <input
-                type="text"
-                name="name"
-                value={newAddress.name}
-                onChange={handleChange}
-                placeholder="Name"
-                required
-                className="w-full p-4 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              />
-              <input
-                type="text"
-                name="lastname"
-                value={newAddress.lastname}
-                onChange={handleChange}
-                placeholder="Lastname"
-                required
-                className="w-full p-4 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              />
-              <input
-                type="text"
-                name="phone"
-                value={newAddress.phone}
-                onChange={handleChange}
-                placeholder="Phone"
-                required
-                className="w-full p-4 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              />
-              <input
-                type="text"
-                name="province"
-                value={newAddress.province}
-                onChange={handleChange}
-                placeholder="Province"
-                required
-                className="w-full p-4 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              />
-              <input
-                type="text"
-                name="district"
-                value={newAddress.district}
-                onChange={handleChange}
-                placeholder="District"
-                required
-                className="w-full p-4 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              />
-              <input
-                type="text"
-                name="tambon"
-                value={newAddress.tambon}
-                onChange={handleChange}
-                placeholder="Tambon"
-                required
-                className="w-full p-4 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              />
-              <input
-                type="text"
-                name="housenumber"
-                value={newAddress.housenumber}
-                onChange={handleChange}
-                placeholder="House Number"
-                required
-                className="w-full p-4 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              />
-              <input
-                type="text"
-                name="village"
-                value={newAddress.village}
-                onChange={handleChange}
-                placeholder="Village"
-                required
-                className="w-full p-4 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              />
-              <input
-                type="text"
-                name="zipcode"
-                value={newAddress.zipcode}
-                onChange={handleChange}
-                placeholder="Zipcode"
-                required
-                className="w-full p-4 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              />
-              <input
-                type="text"
-                name="other"
-                value={newAddress.other}
-                onChange={handleChange}
-                placeholder="Other Details"
-                className="w-full p-4 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              />
-              <div className="flex justify-end space-x-4 mt-4">
-                <button
-                  type="button"
-                  onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 bg-gray-500 text-white font-semibold rounded-lg shadow-md hover:bg-gray-600 transition-colors duration-300"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 transition-colors duration-300"
-                >
-                  Save
-                </button>
-              </div>
-            </form>
-          </div>
+{/* New Address Modal */}
+{isModalOpen && (
+  <div className="fixed inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50">
+    <div className="bg-white p-6 rounded-lg shadow-lg max-w-lg w-full max-h-[90vh] overflow-y-auto">
+      <h2 className="text-2xl font-semibold mb-4">Add New Address</h2>
+      <form onSubmit={handleSubmit}>
+        <div className="grid grid-cols-1 gap-4 mb-4">
+          <input
+            type="text"
+            name="name"
+            value={newAddress.name}
+            onChange={handleChange}
+            placeholder="First Name"
+            required
+            className="w-full p-4 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          />
+          <input
+            type="text"
+            name="lastname"
+            value={newAddress.lastname}
+            onChange={handleChange}
+            placeholder="Last Name"
+            required
+            className="w-full p-4 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          />
+          <input
+            type="text"
+            name="phone"
+            value={newAddress.phone}
+            onChange={handleChange}
+            placeholder="Phone Number"
+            required
+            className="w-full p-4 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          />
+          <select
+            name="province"
+            value={newAddress.province}
+            onChange={handleProvinceChange}
+            required
+            className="w-full p-4 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          >
+            <option value="">Select Province</option>
+            {provincesData.map((province) => (
+              <option key={province.id} value={province.name_th}>
+                {province.name_th}
+              </option>
+            ))}
+          </select>
+          <select
+            name="district"
+            value={newAddress.district}
+            onChange={handleDistrictChange}
+            required
+            className="w-full p-4 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          >
+            <option value="">Select District</option>
+            {filteredAmphures.map((amphur) => (
+              <option key={amphur.id} value={amphur.name_th}>
+                {amphur.name_th}
+              </option>
+            ))}
+          </select>
+          <select
+            name="tambon"
+            value={newAddress.tambon}
+            onChange={handleTambonChange}
+            required
+            className="w-full p-4 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          >
+            <option value="">Select Subdistrict</option>
+            {filteredTambons.map((tambon) => (
+              <option key={tambon.id} value={tambon.name_th}>
+                {tambon.name_th}
+              </option>
+            ))}
+          </select>
+          <input
+            type="text"
+            name="housenumber"
+            value={newAddress.housenumber}
+            onChange={handleChange}
+            placeholder="House Number"
+            required
+            className="w-full p-4 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          />
+          <input
+            type="text"
+            name="village"
+            value={newAddress.village}
+            onChange={handleChange}
+            placeholder="Village"
+            className="w-full p-4 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          />
+          <input
+            type="text"
+            name="zipcode"
+            value={zipcode}
+            readOnly
+            placeholder="Zipcode"
+            required
+            className="w-full p-4 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-gray-100"
+          />
+          <textarea
+            name="other"
+            value={newAddress.other}
+            onChange={handleChange}
+            placeholder="Other Details"
+            className="w-full p-4 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          />
         </div>
-      )}
+        <button
+          type="submit"
+          className="w-full p-4 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 transition-colors duration-300"
+        >
+          Save Address
+        </button>
+        <button
+          type="button"
+          onClick={() => setIsModalOpen(false)}
+          className="mt-4 w-full p-4 bg-red-600 text-white font-semibold rounded-lg shadow-md hover:bg-red-700 transition-colors duration-300"
+        >
+          Cancel
+        </button>
+      </form>
+    </div>
+  </div>
+)}
 
-      {/* Edit Address Modal */}
-      {isEditModalOpen && editAddress && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center">
-          <div className="bg-white p-8 rounded-lg shadow-lg w-full max-w-lg overflow-y-auto max-h-[80vh]">
-            <h2 className="text-2xl font-bold text-gray-800 mb-6">Edit Address</h2>
-            <form onSubmit={handleEditSubmit} className="space-y-4">
-              <input
-                type="text"
-                name="name"
-                value={editAddress.name}
-                onChange={handleEditChange}
-                placeholder="Name"
-                required
-                className="w-full p-4 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              />
-              <input
-                type="text"
-                name="lastname"
-                value={editAddress.lastname}
-                onChange={handleEditChange}
-                placeholder="Lastname"
-                required
-                className="w-full p-4 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              />
-              <input
-                type="text"
-                name="phone"
-                value={editAddress.phone}
-                onChange={handleEditChange}
-                placeholder="Phone"
-                required
-                className="w-full p-4 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              />
-              <input
-                type="text"
-                name="province"
-                value={editAddress.province}
-                onChange={handleEditChange}
-                placeholder="Province"
-                required
-                className="w-full p-4 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              />
-              <input
-                type="text"
-                name="district"
-                value={editAddress.district}
-                onChange={handleEditChange}
-                placeholder="District"
-                required
-                className="w-full p-4 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              />
-              <input
-                type="text"
-                name="tambon"
-                value={editAddress.tambon}
-                onChange={handleEditChange}
-                placeholder="Tambon"
-                required
-                className="w-full p-4 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              />
-              <input
-                type="text"
-                name="housenumber"
-                value={editAddress.housenumber}
-                onChange={handleEditChange}
-                placeholder="House Number"
-                required
-                className="w-full p-4 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              />
-              <input
-                type="text"
-                name="village"
-                value={editAddress.village}
-                onChange={handleEditChange}
-                placeholder="Village"
-                required
-                className="w-full p-4 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              />
-              <input
-                type="text"
-                name="zipcode"
-                value={editAddress.zipcode}
-                onChange={handleEditChange}
-                placeholder="Zipcode"
-                required
-                className="w-full p-4 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              />
-              <input
-                type="text"
-                name="other"
-                value={editAddress.other}
-                onChange={handleEditChange}
-                placeholder="Other Details"
-                className="w-full p-4 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              />
-              <div className="flex justify-end space-x-4 mt-4">
-                <button
-                  type="button"
-                  onClick={() => setIsEditModalOpen(false)}
-                  className="px-4 py-2 bg-gray-500 text-white font-semibold rounded-lg shadow-md hover:bg-gray-600 transition-colors duration-300"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 transition-colors duration-300"
-                >
-                  Save
-                </button>
-              </div>
-            </form>
+
+{/* Edit Address Modal */}
+{isEditModalOpen && editAddress && (
+  <div className="fixed inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50 overflow-auto">
+    <div className="bg-white p-6 rounded-lg shadow-lg max-w-lg w-full mx-4 sm:mx-0">
+      <h2 className="text-2xl font-semibold mb-4">Edit Address</h2>
+      <div className="max-h-[80vh] overflow-y-auto">
+        <form onSubmit={handleEditSubmit}>
+          <div className="grid grid-cols-1 gap-4 mb-4">
+            <input
+              type="text"
+              name="name"
+              value={editAddress.name}
+              onChange={handleEditChange}
+              placeholder="First Name"
+              required
+              className="w-full p-4 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            />
+            <input
+              type="text"
+              name="lastname"
+              value={editAddress.lastname}
+              onChange={handleEditChange}
+              placeholder="Last Name"
+              required
+              className="w-full p-4 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            />
+            <input
+              type="text"
+              name="phone"
+              value={editAddress.phone}
+              onChange={handleEditChange}
+              placeholder="Phone Number"
+              required
+              className="w-full p-4 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            />
+            <select
+              name="province"
+              value={editAddress.province}
+              onChange={handleEditChange}
+              required
+              className="w-full p-4 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            >
+              <option value="">Select Province</option>
+              {provincesData.map((province) => (
+                <option key={province.id} value={province.name_th}>
+                  {province.name_th}
+                </option>
+              ))}
+            </select>
+            <select
+              name="district"
+              value={editAddress.district}
+              onChange={handleEditChange}
+              required
+              className="w-full p-4 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            >
+              <option value="">Select District</option>
+              {filteredAmphures.map((amphur) => (
+                <option key={amphur.id} value={amphur.name_th}>
+                  {amphur.name_th}
+                </option>
+              ))}
+            </select>
+            <select
+              name="tambon"
+              value={editAddress.tambon}
+              onChange={handleEditChange}
+              required
+              className="w-full p-4 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            >
+              <option value="">Select Subdistrict</option>
+              {filteredTambons.map((tambon) => (
+                <option key={tambon.id} value={tambon.name_th}>
+                  {tambon.name_th}
+                </option>
+              ))}
+            </select>
+            <input
+              type="text"
+              name="housenumber"
+              value={editAddress.housenumber}
+              onChange={handleEditChange}
+              placeholder="House Number"
+              required
+              className="w-full p-4 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            />
+            <input
+              type="text"
+              name="village"
+              value={editAddress.village}
+              onChange={handleEditChange}
+              placeholder="Village"
+              className="w-full p-4 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            />
+            <input
+              type="text"
+              name="zipcode"
+              value={editAddress.zipcode}
+              readOnly
+              placeholder="Zipcode"
+              required
+              className="w-full p-4 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-gray-100"
+            />
+            <textarea
+              name="other"
+              value={editAddress.other}
+              onChange={handleEditChange}
+              placeholder="Other Details"
+              className="w-full p-4 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            />
           </div>
-        </div>
-      )}
+          <button
+            type="submit"
+            className="w-full p-4 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 transition-colors duration-300"
+          >
+            Save Changes
+          </button>
+          <button
+            type="button"
+            onClick={() => setIsEditModalOpen(false)}
+            className="mt-4 w-full p-4 bg-red-600 text-white font-semibold rounded-lg shadow-md hover:bg-red-700 transition-colors duration-300"
+          >
+            Cancel
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+)}
+
     </div>
   );
 };
