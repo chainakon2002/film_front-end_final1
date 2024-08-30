@@ -29,3 +29,44 @@
     animation: slideOut 0.3s ease-in forwards;
   }
   
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+  
+  .animate-spin {
+    animation: spin 2s linear infinite; /* Increase the duration here */
+  }
+
+  
+
+
+  /* Productpict.css */
+.loading-spinner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh; /* Full viewport height */
+  background-color: rgba(0, 0, 0, 0.1); /* Light overlay background */
+}
+
+.spinner {
+  border: 8px solid #f3f3f3; /* Light grey */
+  border-top: 8px solid #3498db; /* Blue color */
+  border-radius: 50%;
+  width: 60px;
+  height: 60px;
+  animation: spin 2s linear infinite; /* Adjust the spin duration */
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+p {
+  margin-top: 10px;
+  font-size: 18px;
+  color: #333;
+}

@@ -93,7 +93,7 @@ const ManageProducts = () => {
             <th scope="col" className="px-6 py-3">Email</th>
             <th scope="col" className="px-6 py-3">Phone</th>
             <th scope="col" className="px-6 py-3">Role</th>
-            <th scope="col" className="px-6 py-3">Action</th>
+            
           </tr>
         </thead>
         <tbody>
@@ -116,7 +116,7 @@ const ManageProducts = () => {
                   onClick={() => handleEditClick(user)} 
                   className="font-medium text-blue-600 hover:underline"
                 >
-                  Edit
+                 
                 </a>
               </td>
             </tr>

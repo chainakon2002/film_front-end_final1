@@ -212,7 +212,7 @@ const UserProfile = ({ id }) => {
       {addresses.length > 0 ? (
         addresses.map((address, index) => (
           <div key={index} className="mb-6 p-6 border border-gray-200 rounded-lg shadow-sm bg-gray-50">
-            <h2 className="text-xl font-semibold text-gray-800 mb-2">Address {index + 1}</h2>
+            <h2 className="text-xl font-semibold text-gray-800 mb-2">ที่อยู่ {index + 1}</h2>
             <p className="text-gray-700"><strong>Name:</strong> {address.name} {address.lastname}</p>
             <p className="text-gray-700"><strong>Phone:</strong> {address.phone}</p>
             <p className="text-gray-700"><strong>Province:</strong> {address.province}</p>

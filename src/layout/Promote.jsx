@@ -1,22 +1,39 @@
-export default function Promote(){
+import React, { useState, useEffect } from 'react';
 
-    return (
-        <div className="flex">
-<div className="flex flex-col items-center justify-start py-10 text-center">
-  <div className="mt-auto">
-    <p className="text-[50px] font-semibold text-center">Windows 11 Pro </p>
-    <p className="font-semibold text-lg">ลด 60% ถึง 29 สิงหาคม</p>
-    <br />
-    <img src="/src/assets/Banner.png" alt="" className="rounded-3xl" />
-  </div>
-</div>
+export default function Promote() {
+  const images = [
+    "/src/assets/Banner.png",
+    "/src/assets/Banner4.jpg",
+    "/src/assets/Banner5.png", // Add more image paths as needed
+  ];
 
-</div>
-    )
-  }
-  
-  {/* <div className="pomo ">
-<p className="text-[50px] font-semibold">Windows 11 Pro </p>
-<p className="font-semibold text-lg">ลด 50% ถึง 29 กุมภาพันธ์</p>
-<img src="/src/assets/c9txfl (1).png" alt="" className="imgpomo" />
-</div> */}
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentImageIndex((prevIndex) => (prevIndex + 1) % images.length);
+    }, 3000); // Change image every 3 seconds
+
+    return () => clearInterval(interval); // Clear the interval on component unmount
+  }, [images.length]);
+
+  return (
+    <div className="flex overflow-hidden relative w-full h-auto">
+
+      <div
+        className="flex transition-transform duration-700 ease-in-out"
+        style={{ transform: `translateX(-${currentImageIndex * 100}%)` }}
+      >
+        {images.map((image, index) => (
+          <div key={index} className="min-w-full">
+            <img
+              src={image}
+              alt={`Promotional Banner ${index + 1}`}
+              className="rounded-3xl w-full h-auto"
+            />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}

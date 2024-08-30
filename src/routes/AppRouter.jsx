@@ -48,7 +48,6 @@ const guestRouter = createBrowserRouter([
   }
 ])
 
-// User Router
 const userRouter = createBrowserRouter([
   {
     path: '/',
@@ -72,7 +71,6 @@ const userRouter = createBrowserRouter([
   }
 ])
 
-// Admin Router
 const adminRouter = createBrowserRouter([
   {
     path: '/',
@@ -103,7 +101,7 @@ const officerRouter = createBrowserRouter([
     element: <>
  <div className="flex">
         <Sidebar2 />
-        <div className="flex-1 ml-80 p-4">
+        <div className="flex-1 ml-[380px] p-4">
           <Outlet />
         </div>
       </div>

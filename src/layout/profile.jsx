@@ -1,104 +1,234 @@
-// import { Link, useNavigate } from 'react-router-dom'
-// import useAuth from '../hooks/useAuth';
+import React, { useEffect, useState } from 'react';
+import axios from 'axios';
 
-// export default function LoginForm() {
-  
-//     const { setUser } = useAuth()
-//     const [input, setInput] = useState({
-//       username : '', 
-//       password : ''
-//     })
-  
+const UserProfile = () => {
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedUser, setEditedUser] = useState(null);
+  const token = localStorage.getItem('token');
 
+  useEffect(() => {
+    const fetchUser = async () => {
+      if (!token) {
+        setError(new Error('Token is missing'));
+        setLoading(false);
+        return;
+      }
 
-  
-//     return (
-//       <div className="flex items-center justify-center h-screen mt-[-100px]">
-//         {/* รูปภาพทางซ้าย */}
-//         <div className="flex-none mr-40">
-//           <img src="/src/assets/loginform.png" className="max-w-[600px] h-auto" />
-//         </div>
-    
-//         {/* แบบฟอร์มทางขวา */}
-//         <form className="flex flex-col justify-center items-center outline-none  border-20 w-[30rem] h-[30rem] rounded-[25px] shadow-md mt-20 ml-10 transition duration-500 ease-in-out transform" >
-//             <h1>{user?.id ? user.username : ''}</h1>
-//         </form>
-//       </div>
-//     );
-    
-    
-    
-//   }
-  
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import useAuth from '../hooks/useAuth';
+      try {
+        const response = await axios.get('http://localhost:8889/auth/getuserme', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setUser(response.data);
+        setEditedUser(response.data);
+      } catch (err) {
+        console.error('Error fetching user data:', err);
+        setError(err);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-export default function Profile() {
-  const { user } = useAuth();
-  const navigate = useNavigate();
-  const [clicked, setClicked] = useState(false);
+    fetchUser();
+  }, [token]);
 
-  const handleClick = (path) => {
-    setClicked(true);
-    setTimeout(() => {
-      navigate(path);
-      setClicked(false);
-    }, 300); // Adjust timing to match your animation duration
+  const handleEditClick = () => {
+    setIsEditing(true);
   };
 
+  const handleCloseModal = () => {
+    setIsEditing(false);
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setEditedUser((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSaveChanges = async () => {
+    if (!token || !editedUser) return;
+
+    try {
+      await axios.put('http://localhost:8889/auth/updateprofile', editedUser, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setUser(editedUser);
+      setIsEditing(false);
+    } catch (err) {
+      console.error('Error updating user data:', err);
+      setError(err);
+    }
+  };
+
+  if (loading) return <p className="text-center text-gray-500">Loading...</p>;
+  if (error) return <p className="text-center text-red-500">Error: {error.message}</p>;
+
   return (
-    <div className="bg-gradient-to-r from-pink-500 to-orange-400 p-8 rounded-lg shadow-lg text-center">
-      <style>
-        {`
-          @import url('https://fonts.googleapis.com/css2?family=Prompt:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900&display=swap');
-        `}
-      </style>
-      <div className="my-4">
-        <img
-          src="https://icons.veryicon.com/png/o/internet--web/prejudice/user-128.png" // Replace with the actual image path
-          alt="User"
-          className="w-24 h-24 rounded-full mx-auto "
-        />
-        <h1 className="text-4xl font-bold my-2" style={{ fontFamily: 'Prompt, sans-serif' }}>
-          {user?.id ? user.username : ''}
-        </h1>
-        <p className="text-lg font-light" style={{ fontFamily: 'Prompt, sans-serif' }}>
-        {user?.id ? user.email : ''}
-        </p>
-      </div>
-      <div className="flex justify-center gap-4 mt-4">
-        <button
-          className="bg-white text-gray-800 py-2 px-6 rounded-full transition-transform transform hover:scale-105"
-          onClick={() => handleClick('/edit-profile')}
-        >
-          Edit Profile
-        </button>
-        <button
-          className="bg-white text-gray-800 py-2 px-6 rounded-full transition-transform transform hover:scale-105"
-          onClick={() => handleClick('/settings')}
-        >
-          Settings
-        </button>
-      </div>
-      <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="bg-white p-4 rounded-lg shadow-md">
-          <h2 className="text-xl font-bold mb-2" style={{ fontFamily: 'Prompt, sans-serif' }}>
-            ความเป็นส่วนตัวและการปรับเปลี่ยนในแบบของคุณ
-          </h2>
-          <p className="text-sm" style={{ fontFamily: 'Prompt, sans-serif' }}>
-            ดูข้อมูลในบัญชี Google และเลือกกิจกรรมที่จะแสดงที่นี่เพื่อปรับเปลี่ยนประสบการณ์การใช้งาน Google ในแบบของคุณ
-          </p>
+    <div className="relative flex flex-col w-full mt-[50px] min-w-0 mb-6 break-words border border-dashed bg-clip-border rounded-2xl border-stone-200 bg-light/30 p-6">
+      {/* User Profile Header */}
+      <div className="px-9 pt-9 flex-auto min-h-[70px] pb-0 bg-transparent">
+        <div className="flex flex-wrap mb-6 xl:flex-nowrap">
+          <div className="mb-5 mr-5">
+            <div className="relative inline-block shrink-0 rounded-2xl">
+              <img
+                className="inline-block shrink-0 rounded-2xl w-[80px] h-[80px] lg:w-[160px] lg:h-[160px]"
+                src="https://raw.githubusercontent.com/Loopple/loopple-public-assets/main/riva-dashboard-tailwind/img/avatars/avatar1.jpg"
+                alt="Profile"
+              />
+              <div className="group/tooltip relative">
+                <span className="w-[15px] h-[15px] absolute bg-success rounded-full bottom-0 end-0 -mb-1 -mr-2 border border-white"></span>
+                <span className="text-xs absolute z-10 transition-opacity duration-300 ease-in-out px-3 py-2 whitespace-nowrap text-center transform bg-white rounded-2xl shadow-sm bottom-0 -mb-2 start-full ml-4 font-medium text-secondary-inverse group-hover/tooltip:opacity-100 opacity-0 block">
+                  Status: Active
+                </span>
+              </div>
+            </div>
+          </div>
+          <div className="grow">
+            <div className="flex flex-wrap items-start justify-between mb-2">
+              <div className="flex flex-col">
+                <p className="text-lg font-semibold mb-2">
+                  <strong>Username:</strong> {user.username}
+                </p>
+                <p className="text-lg font-semibold mb-2">
+                  <strong>Name:</strong> {user.name} {user.lastname}
+                </p>
+
+                <p className="text-lg font-semibold mb-2">
+                  <strong>Phone:</strong> {user.phone}
+                </p>
+                <div className="flex flex-wrap pr-2 mb-4 font-medium">
+  
+                  <a
+                    href="javascript:void(0)"
+                    className="flex items-center mb-2 mr-5 text-secondary-dark hover:text-primary"
+                  >
+                    <span className="mr-1">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        fill="currentColor"
+                        className="w-5 h-5"
+                      >
+                        <path d="M1.5 8.67v8.58a3 3 0 003 3h15a3 3 0 003-3V8.67l-8.928 5.493a3 3 0 01-3.144 0L1.5 8.67zM22.5 6.908V6.75a3 3 0 00-3-3h-15a3 3 0 00-3 3v.158l9.714 5.978a1.5 1.5 0 001.572 0L22.5 6.908z" />
+                      </svg>
+                    </span>
+                    {user.email}
+                  </a>
+                </div>
+              </div>
+              <div className="flex flex-wrap my-auto">
+                <a
+                  href="javascript:void(0)"
+                  className="inline-block px-6 py-3 mr-3 text-base font-medium leading-normal text-center align-middle transition-colors duration-150 ease-in-out border-0 shadow-none cursor-pointer rounded-2xl text-muted bg-light border-light hover:bg-light-dark active:bg-light-dark focus:bg-light-dark"
+                >
+                  Follow
+                </a>
+                <button
+  onClick={handleEditClick}
+  className="inline-block px-6 py-3 text-base font-medium leading-normal text-center text-white align-middle transition-colors duration-150 ease-in-out border-0 shadow-none cursor-pointer rounded-2xl bg-primary hover:bg-primary-dark active:bg-primary-dark focus:bg-primary-dark"
+>
+  Edit Profile
+</button>
+
+              </div>
+            </div>
+
+          </div>
         </div>
-        <div className="bg-white p-4 rounded-lg shadow-md">
-          <h2 className="text-xl font-bold mb-2" style={{ fontFamily: 'Prompt, sans-serif' }}>
-            เคล็ดลับความปลอดภัยสำหรับคุณ
-          </h2>
-          <p className="text-sm" style={{ fontFamily: 'Prompt, sans-serif' }}>
-            คำแนะนำเพื่อความปลอดภัยที่พบในหน้าการตรวจสอบความปลอดภัยสำหรับบัญชี
-          </p>
-        </div>
       </div>
+      {/* Edit Modal */}
+      {isEditing && (
+        <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg max-w-lg w-full">
+            <h3 className="text-xl font-semibold mb-4">Edit Profile</h3>
+            <div className="mb-4">
+              <label htmlFor="username" className="block text-sm font-medium mb-2">
+                Username
+              </label>
+              <input
+                type="text"
+                id="username"
+                name="username"
+                value={editedUser.username}
+                onChange={handleInputChange}
+                className="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary sm:text-sm"
+              />
+            </div>
+            <div className="mb-4">
+              <label htmlFor="name" className="block text-sm font-medium mb-2">
+                Name
+              </label>
+              <input
+                type="text"
+                id="name"
+                name="name"
+                value={editedUser.name}
+                onChange={handleInputChange}
+                className="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary sm:text-sm"
+              />
+            </div>
+            <div className="mb-4">
+              <label htmlFor="lastname" className="block text-sm font-medium mb-2">
+                Lastname
+              </label>
+              <input
+                type="text"
+                id="lastname"
+                name="lastname"
+                value={editedUser.lastname}
+                onChange={handleInputChange}
+                className="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary sm:text-sm"
+              />
+            </div>
+            <div className="mb-4">
+              <label htmlFor="email" className="block text-sm font-medium mb-2">
+                Email
+              </label>
+              <input
+                type="email"
+                id="email"
+                name="email"
+                value={editedUser.email}
+                onChange={handleInputChange}
+                className="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary sm:text-sm"
+              />
+            </div>
+            <div className="mb-4">
+              <label htmlFor="phone" className="block text-sm font-medium mb-2">
+                Phone
+              </label>
+              <input
+                type="text"
+                id="phone"
+                name="phone"
+                value={editedUser.phone}
+                onChange={handleInputChange}
+                className="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary sm:text-sm"
+              />
+            </div>
+            <div className="flex justify-end space-x-4">
+              <button
+                onClick={handleSaveChanges}
+                className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg shadow-sm hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+              >
+                Save
+              </button>
+              <button
+                onClick={handleCloseModal}
+                className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-gray-500 rounded-lg shadow-sm hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      
     </div>
   );
-}
+};
+
+export default UserProfile;

@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import './cart.css';
 
 function Cart() {
   const [cart, setCart] = useState([]);
@@ -20,8 +21,18 @@ function Cart() {
         console.error(err);
       }
     };
-    fetchData();
+  
+    // Check if the page needs to be reloaded
+    const needsReload = localStorage.getItem('needsReload') === 'true';
+    
+    if (needsReload) {
+      localStorage.removeItem('needsReload');
+      window.location.reload();
+    } else {
+      fetchData();
+    }
   }, []);
+  
 
   const deleteCart = async (id) => {
     try {
@@ -54,7 +65,6 @@ function Cart() {
         price: newAllPrice,
       });
 
-      // Update cart in state
       setCart(cart.map((item) =>
         item.id === id ? { ...item, total: data, price: newAllPrice } : item
       ));
@@ -116,7 +126,7 @@ function Cart() {
                     type="checkbox"
                     checked={selectedItems.includes(carts.id)}
                     onChange={() => handleCheckboxChange(carts.id)}
-                    className="mr-2"
+                    className="custom-checkbox"
                   />
                 </td>
                 <td className="px-6 py-4 font-semibold text-gray-900">

@@ -8,6 +8,7 @@ export default function UserHome() {
   const [product, setProduct] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [cart, setCart] = useState([]);
+  const [activeTab, setActiveTab] = useState('ALL'); // Default to 'ALL'
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -30,9 +31,11 @@ export default function UserHome() {
     fetchProduct();
   }, []);
 
-  const filteredProducts = product.filter(item =>
-    item.ItemName.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredProducts = product.filter(item => {
+    const matchesSearch = item.ItemName.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesCategory = activeTab === 'ALL' || item.category === activeTab;
+    return matchesSearch && matchesCategory;
+  });
 
   const cartShow = async () => {
     try {
@@ -49,7 +52,6 @@ export default function UserHome() {
   const cartfu = async (item) => {
     const userid = localStorage.getItem('userId');
     const cartItimechix = cart.find(c => c.productId === item.id);
-    console.log(555, cartItimechix);
     try {
       if (cartItimechix) {
         const totalAll = cartItimechix.total + 1;
@@ -66,6 +68,7 @@ export default function UserHome() {
           productId: item.id
         });
       }
+      window.location.reload();
       cartShow();
     } catch (err) {
       console.error(err);
@@ -73,7 +76,7 @@ export default function UserHome() {
   };
 
   return (
-    <div className="user-home-container">
+    <div className="user-home-container fade-in-page">
       <div className='poster'>
         <Promote />
         <h3 className="productfi">รายการสินค้า</h3>
@@ -89,31 +92,76 @@ export default function UserHome() {
             />
           </form>
         </div>
+        {/* Tab Buttons */}
+        <div className="tabs flex justify-center mb-4">
+          <button 
+            className={`tab-button ${activeTab === 'ALL' ? 'active' : ''}`} 
+            onClick={() => setActiveTab('ALL')}
+          >
+            ทั้งหมด
+          </button>
+          <button 
+            className={`tab-button ${activeTab === 'SOFTWARE' ? 'active' : ''}`} 
+            onClick={() => setActiveTab('SOFTWARE')}
+          >
+            ซอฟต์แวร์
+          </button>
+          <button 
+            className={`tab-button ${activeTab === 'HARDWARE' ? 'active' : ''}`} 
+            onClick={() => setActiveTab('HARDWARE')}
+          >
+            ฮาร์ดแวร์
+          </button>
+        </div>
       </div>
 
-      {/* Product list */}
-      {filteredProducts.map((item) => (
-        <div key={item.id} className="product-item flex flex-col justify-between items-center border rounded-lg p-4 shadow-md m-2 relative">
-          <Link to={`/product/${item.id}`} className="text-center w-full">
-            {/* Stock Information Positioned at the Top Right */}
-            <div className="stock-info absolute top-2 right-2 bg-white text-gray-800 rounded-md px-2 py-1 text-sm shadow">
-              <p>เหลือสินค้า {item.stock}</p>
-            </div>
-            <img src={item.file} alt="" className="w-full h-48 object-cover rounded-md mb-4" />
-            <hr className="mb-4" />
-            <h3 className="font-semibold product-title text-lg mb-2">{item.ItemName}</h3>
-            <p className="font-semibold product-price text-md mb-4">ราคา: {item.price.toLocaleString()} บาท</p>
-          </Link>
-          <div className="button-group w-full flex justify-center">
-            <button 
-              onClick={() => cartfu(item)} 
-              className="cart-button bg-blue-600 text-white py-2 px-4 rounded-[15px] hover:bg-blue-700 transition-colors w-full mt-auto"
+      <div className="flex justify-center con">
+  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+    {filteredProducts.map((item) => (
+      <div
+        key={item.id}
+        className="product-item flex flex-col justify-between items-center border rounded-[15px] p-4 shadow-md relative w-[250px] h-[450px] bg-white"
+      >
+        <Link to={`/product/${item.id}`} className="text-center w-full flex-grow">
+          {/* Stock Information Positioned at the Top Right */}
+          <div className="stock-info absolute top-2 right-2 bg-white text-gray-800 rounded-md px-2 py-1 text-sm shadow">
+            <p>{item.stock > 0 ? `เหลือสินค้า ${item.stock}` : 'สินค้าหมด'}</p>
+          </div>
+          {/* Category Information Positioned at the Top Left */}
+          <div className="category-info absolute top-2 left-2 text-gray-800 px-2 py-1 text-sm shadow">
+            <p>{item.category}</p>
+          </div>
+          <img
+            src={item.file}
+            alt=""
+            className="w-full h-48 object-cover rounded-md mb-4"
+          />
+          <hr className="mb-4" />
+          <h3 className="font-semibold product-title text-lg mb-2">
+            {item.ItemName}
+          </h3>
+          <p className="font-semibold product-price text-md mb-4">
+            ราคา: {item.price.toLocaleString()} บาท
+          </p>
+        </Link>
+        <div className="button-group w-full flex justify-center">
+          {item.stock > 0 ? (
+            <button
+              onClick={() => cartfu(item)}
+              className="cart-button bg-blue-600 text-white py-2 px-4 rounded-[15px] hover:bg-blue-700 transition-colors w-full"
             >
               เพิ่มไปยังตะกร้า
             </button>
-          </div>
+          ) : (
+            <p className="text-red-500 font-semibold">สินค้าหมด</p>
+          )}
         </div>
-      ))}
+      </div>
+    ))}
+  </div>
+</div>
+
+
     </div>
   );
 }
