@@ -22,7 +22,7 @@ const OrdersPage = () => {
                 });
 
                 // Filter orders with status "จัดส่งแล้ว"
-                const shippedOrders = response.data.filter(order => order.order.status === 'จัดส่งแล้ว');
+                const shippedOrders = response.data.filter(order => order.order.status === 'จัดส่งสำเร็จ');
 
                 setOrders(shippedOrders);
                 calculateProductSales(shippedOrders);

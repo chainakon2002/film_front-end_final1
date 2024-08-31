@@ -47,9 +47,9 @@ function Paymentcarts() {
         return (
             <div className="bg-gray-100 p-4 rounded-lg shadow-sm mt-4 text-right">
                 <h1 className="text-lg font-semibold">จำนวนรวม: {tl}</h1>
-                <h1 className="text-lg font-semibold">ราคารวม: {pr}</h1>
+                <h1 className="text-lg font-semibold">ราคารวม: {pr.toLocaleString()}</h1>
                 <h1 className="text-lg font-semibold">ค่าจัดส่ง: {shippingCost}</h1>
-                <h1 className="text-lg font-semibold">รวมทั้งหมด: {totalWithShipping}</h1>
+                <h1 className="text-lg font-semibold">รวมทั้งหมด: {totalWithShipping.toLocaleString()}</h1>
             </div>
         );
     };

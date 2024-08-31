@@ -8,7 +8,7 @@ export default function ProductDetail() {
   const [cart, setCart] = useState([]);
   const [isAnimating, setIsAnimating] = useState(false);
   const { id } = useParams();
-  const navigate = useNavigate(); // Initialize navigate function
+  const navigate = useNavigate(); 
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -61,6 +61,7 @@ export default function ProductDetail() {
       setIsAnimating(true);
 
       
+
       setTimeout(() => {
         setIsAnimating(false);
         

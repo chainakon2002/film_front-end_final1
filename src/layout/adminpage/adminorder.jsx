@@ -145,7 +145,7 @@ const OrdersPage = () => {
 
                 {/* Tab Navigation */}
                 <div className="flex space-x-4 mb-8">
-                    {['ยกเลิกแล้ว','รอดำเนินการ', 'กำลังเตรียมจัดส่ง', 'กำลังจัดส่ง', 'จัดส่งแล้ว'].map(status => (
+                    {['ยกเลิกแล้ว','รอดำเนินการ', 'กำลังเตรียมจัดส่ง', 'กำลังจัดส่ง', 'จัดส่งสำเร็จ'].map(status => (
                         <button
                             key={status}
                             onClick={() => setActiveTab(status)}

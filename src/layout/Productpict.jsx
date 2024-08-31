@@ -45,7 +45,7 @@ const Productpict = () => {
         'http://localhost:8889/auth/updateorderstatus',
         { 
           orderId: order.orderId, 
-          status: 'จัดส่งแล้ว' 
+          status: 'จัดส่งสำเร็จ' 
         },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -53,7 +53,7 @@ const Productpict = () => {
       setOrders((prevOrders) =>
         prevOrders.map((o) =>
           o.orderId === order.orderId
-            ? { ...o, order: { ...o.order, status: 'จัดส่งแล้ว' } }
+            ? { ...o, order: { ...o.order, status: 'จัดส่งสำเร็จ' } }
             : o
         )
       );
@@ -234,7 +234,7 @@ const Productpict = () => {
       ราคารวม
     </p>
     <p className="font-manrope font-bold text-2xl leading-9 text-indigo-700">
-      {order.order.price_all} บาท
+      {order.order.price_all.toLocaleString()} บาท
     </p>
   </div>
 </motion.div>
@@ -348,33 +348,109 @@ const Productpict = () => {
           </div>
         )}
 
-        {/* Status Modal */}
-        {statusModalOpen && selectedStatusOrder && (
-          <div className="fixed inset-0 flex items-center justify-center z-50">
-            <div
-              className="fixed inset-0 bg-black opacity-50"
-              onClick={handleCloseStatusModal}
-            />
-            <div
-              className="bg-white p-12 rounded-lg shadow-lg z-10 relative max-w-3xl w-full"
-              style={{ maxHeight: '80vh', overflowY: 'auto' }}
-            >
-              <button
-                className="absolute top-4 right-4 text-gray-600 text-2xl"
-                onClick={handleCloseStatusModal}
-              >
-                ×
-              </button>
-              <h2 className="text-2xl font-bold mb-6">สถานะการสั่งซื้อ</h2>
-              <p><strong>Order ID:</strong> #{selectedStatusOrder.orderId}</p>
-              <p><strong>สถานะ:</strong> {selectedStatusOrder.order.status}</p>
-              <p><strong>วันที่สั่งซื้อ:</strong> {formatDate(selectedStatusOrder.order.date)}</p>
-              <p><strong>ประเภทการชำระเงิน:</strong> {selectedStatusOrder.pay}</p>
-              <p><strong>ชื่อบริษัทขนส่ง:</strong> {selectedStatusOrder.order.shippingCompany}</p>
-              <p><strong>รหัสติดตาม:</strong> {selectedStatusOrder.order.trackingNumber}</p>
+{statusModalOpen && selectedStatusOrder && (
+  <div className="fixed inset-0 flex items-center justify-center z-50">
+    <div
+      className="fixed inset-0 bg-black opacity-50"
+      onClick={handleCloseStatusModal}
+    />
+    <div
+      className="bg-white p-12 rounded-lg shadow-lg z-10 relative max-w-[1300px] w-full"
+      style={{ maxHeight: '80vh', overflowY: 'auto' }}
+    >
+      <button
+        className="absolute top-4 right-4 text-gray-600 text-2xl"
+        onClick={handleCloseStatusModal}
+      >
+        ×
+      </button>
+      <h2 className="text-2xl font-bold mb-6 text-center">สถานะการสั่งซื้อ</h2>
+     
+      
+      
+      <div className="container px-1 px-md-4 py-5 mx-auto">
+        <div className="card">
+          <div className="row d-flex justify-content-between px-3 top">
+            <div className="d-flex">
+              <h5>
+                ORDER <span className="text-primary font-weight-bold">#{selectedStatusOrder.orderId}</span>
+               
+              </h5>
+              <p>{formatDate(selectedStatusOrder.order.date)}</p>
+             
+              <p>
+              ประเภทการชำระเงิน <span className="text-primary font-weight-bold">{selectedStatusOrder.pay}</span>
+              </p>
+            </div>
+            <div className="d-flex flex-column text-sm-right">
+            <p>
+              สถานะ <span className="text-primary font-weight-bold">{selectedStatusOrder.order.status}</span>
+              </p>
+              <p>
+                ชื่อบริษัทขนส่ง {selectedStatusOrder.order.shippingCompany} รหัสติดตาม
+                <span className="font-weight-bold">{selectedStatusOrder.order.trackingNumber}</span>
+              </p>
             </div>
           </div>
+
+          {/* Progress Bar */}
+          <div className="row d-flex justify-content-center">
+            <div className="col-12">
+              <ul id="progressbar" className="text-center">
+                <li className={`step0 ${selectedStatusOrder.order.status === 'รอดำเนินการ' || selectedStatusOrder.order.status === 'กำลังเตรียมจัดส่ง' || selectedStatusOrder.order.status === 'กำลังจัดส่ง' || selectedStatusOrder.order.status === 'จัดส่งสำเร็จ' ? 'active' : ''}`}></li>
+                <li className={`step0 ${selectedStatusOrder.order.status === 'กำลังเตรียมจัดส่ง' || selectedStatusOrder.order.status === 'กำลังจัดส่ง' || selectedStatusOrder.order.status === 'จัดส่งสำเร็จ' ? 'active' : ''}`}></li>
+                <li className={`step0 ${selectedStatusOrder.order.status === 'กำลังจัดส่ง' || selectedStatusOrder.order.status === 'จัดส่งสำเร็จ' ? 'active' : ''}`}></li>
+                <li className={`step0 ${selectedStatusOrder.order.status === 'จัดส่งสำเร็จ' ? 'active' : ''}`}></li>
+              </ul>
+            </div>
+          </div>
+
+          {/* Status Icons */}
+          <div className="row d-flex justify-content-between align-items-center top">
+            <div className="icon-content d-flex flex-column align-items-center">
+              <img className="icon" src="https://i.imgur.com/9nnc9Et.png" alt="Order Processed Icon" />
+              <p className="font-weight-bold text-center">รอดำเนินการ</p>
+            </div>
+            <div className="icon-content d-flex flex-column align-items-center">
+              <img className="icon" src="https://i.imgur.com/u1AzR7w.png" alt="Order Shipped Icon" />
+              <p className="font-weight-bold text-center">กำลังเตรียมจัดส่ง</p>
+            </div>
+            <div className="icon-content d-flex flex-column align-items-center">
+              <img className="icon" src="https://i.imgur.com/TkPm63y.png" alt="Order En Route Icon" />
+              <p className="font-weight-bold text-center">กำลังจัดส่ง</p>
+            </div>
+            <div className="icon-content d-flex flex-column align-items-center">
+              <img className="icon" src="https://i.imgur.com/HdsziHP.png" alt="Order Arrived Icon" />
+              <p className="font-weight-bold text-center">จัดส่งสำเร็จ</p>
+            </div>
+          </div>
+        </div>
+
+{/* Conditional Display for Cancellation Reason */}
+{selectedStatusOrder.order.status === 'ยกเลิกแล้ว' && selectedStatusOrder.pay === 'โอนจ่าย' && (
+          <div className="p-6 bg-white rounded-lg shadow-md border border-gray-200 mt-6">
+            <p className="text-lg font-semibold text-gray-800 mb-2">เหตุผลการยกเลิกคำสั่งซื้อ</p>
+            <p className="text-base text-gray-700 mb-4">
+              <strong className="font-bold text-red-500">เหตุผล:</strong> {selectedStatusOrder.order.cancel}
+            </p>
+
+            <p className="text-lg font-semibold text-gray-800 mb-2">หมายเหตุ</p>
+            <p className="text-base text-gray-700 mb-4">
+              ท่านสามารถติดต่อรับเงินคืน โปรดติดต่อพนักงาน
+            </p>
+            <p className="text-base text-gray-700">
+              <strong className="font-bold text-blue-500">Line:</strong> @cs.shop124
+            </p>
+          </div>
         )}
+
+        
+      </div>
+    </div>
+  </div>
+)}
+
+
       </div>
     </section>
   );
