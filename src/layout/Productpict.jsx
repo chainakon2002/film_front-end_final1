@@ -14,6 +14,17 @@ const Productpict = () => {
   const [cancelReason, setCancelReason] = useState('');
   const [orderToCancel, setOrderToCancel] = useState(null);
   const [loadingCancel, setLoadingCancel] = useState(false);
+  const [activeTab, setActiveTab] = useState('รอดำเนินการ');
+  
+    // เพิ่ม state สำหรับนับจำนวนคำสั่งซื้อแต่ละสถานะ
+    const [statusCounts, setStatusCounts] = useState({
+      'ยกเลิกแล้ว': 0,
+      'ยกเลิกโดยทางร้าน': 0,
+      'รอดำเนินการ': 0,
+      'กำลังเตรียมจัดส่ง': 0,
+      'กำลังจัดส่ง': 0,
+      'จัดส่งสำเร็จ': 0,
+    });
 
   
   useEffect(() => {
@@ -28,6 +39,22 @@ const Productpict = () => {
                 setOrders(sortedOrders);
         setOrders(response.data);
         setLoading(false);
+        // อัปเดตการนับจำนวนคำสั่งซื้อตามสถานะ
+        const newStatusCounts = response.data.reduce((counts, order) => {
+          const status = order.order.status;
+          counts[status] = (counts[status] || 0) + 1;
+          return counts;
+        }, {});
+
+        setStatusCounts(prevCounts => ({
+          ...prevCounts,
+          ...newStatusCounts
+        }));
+
+
+
+
+
       } catch (error) {
         setError('Error fetching orders.');
         setLoading(false);
@@ -142,21 +169,53 @@ const Productpict = () => {
     return date.toLocaleDateString('th-TH') + ' ' + date.toLocaleTimeString('th-TH');
   };
 
+
+
+  
+
+  const filteredOrders = orders.filter(order => order.order.status === activeTab);
   return (
     <section className="py-24 relative">
       <div className="w-full max-w-7xl px-4 md:px-5 lg-6 mx-auto">
         <h2 className="font-manrope font-bold text-3xl sm:text-4xl leading-10 text-black mb-11">รายการสั่งซื้อ</h2>
 
-        {orders.length === 0 && <p>No orders found.</p>}
+               {/* Tab Navigation */}
+               <div className="flex justify-center space-x-4 mb-8">
+  {['ยกเลิกแล้ว', 'ยกเลิกโดยทางร้าน', 'รอดำเนินการ', 'กำลังเตรียมจัดส่ง', 'กำลังจัดส่ง', 'จัดส่งสำเร็จ'].map(status => {
+    const count = statusCounts[status] || 0;
+    return (
+      <button
+        key={status}
+        onClick={() => setActiveTab(status)}
+        className={`relative py-2 px-4 rounded-[13px] ${activeTab === status ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-700'}`}
+      >
+        <span className="relative flex items-center">
+          {status}
+          {count > 0 && (
+            <span className="absolute top-[-5px] right-[-10px] translate-x-1/2 -translate-y-1/2 bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
+              {count}
+            </span>
+          )}
+        </span>
+      </button>
+    );
+  })}
+</div>
 
-        {orders.map((order) => (
-          <motion.div
-            key={order.id}
-            className="mb-12"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-          >
+
+
+
+
+{filteredOrders.length === 0 && <p>No orders found for {activeTab}.</p>}
+
+{filteredOrders.map((order) => (
+                    <motion.div
+                        key={order.orderId}
+                        className="mb-12"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.8 }}
+                    >
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-8 py-6 border-y border-gray-100 mb-6">
               <div className="box">
                 <p className="font-normal text-base leading-7 text-gray-500 mb-3">วันที่สั่งซื้อ</p>
@@ -323,30 +382,33 @@ const Productpict = () => {
 
         {/* Conditional rendering for slip */}
         {selectedSlip && (
-          <div className="fixed inset-0 flex items-center justify-center z-50">
-            <div
-              className="fixed inset-0 bg-black opacity-50"
-              onClick={handleCloseSlip}
-            />
-            <div
-              className="bg-white p-12 rounded-lg shadow-lg z-10 relative max-w-3xl w-full"
-              style={{ maxHeight: '80vh', overflowY: 'auto' }}
-            >
-              <button
-                className="absolute top-4 right-4 text-gray-600 text-2xl"
-                onClick={handleCloseSlip}
-              >
-                ×
-              </button>
-              <h2 className="text-2xl font-bold mb-6">ใบเสร็จ</h2>
-              <img
-                src={selectedSlip}
-                alt="Slip"
-                className="w-full h-auto"
-              />
-            </div>
-          </div>
-        )}
+  <div className="fixed inset-0 flex items-center justify-center z-50">
+    <div
+      className="fixed inset-0 bg-black opacity-50"
+      onClick={handleCloseSlip}
+    />
+    <div
+      className="bg-white p-12 rounded-lg shadow-lg z-10 relative max-w-[600px] flex flex-col items-center"
+      style={{ maxHeight: '80vh', overflowY: 'auto' }}
+    >
+      <button
+        className="absolute top-4 right-4 text-gray-600 text-2xl"
+        onClick={handleCloseSlip}
+      >
+        ×
+      </button>
+      <h2 className="text-2xl font-bold mb-6">หลักฐานการชำระเงิน</h2>
+      <div className="flex justify-center w-full">
+        <img
+          src={selectedSlip}
+          alt="Slip"
+          className="max-w-full max-h-[60vh] object-contain"
+        />
+      </div>
+    </div>
+  </div>
+)}
+
 
 {statusModalOpen && selectedStatusOrder && (
   <div className="fixed inset-0 flex items-center justify-center z-50">
@@ -444,6 +506,37 @@ const Productpict = () => {
           </div>
         )}
 
+
+        {/* Conditional Display for Cancellation Reason */}
+{selectedStatusOrder.order.status === 'ยกเลิกโดยทางร้าน' && selectedStatusOrder.pay === 'โอนจ่าย'  && (
+          <div className="p-6 bg-white rounded-lg shadow-md border border-gray-200 mt-6">
+            <p className="text-lg font-semibold text-gray-800 mb-2">เหตุผลการยกเลิกคำสั่งซื้อ</p>
+            <p className="text-base text-gray-700 mb-4">
+              <strong className="font-bold text-red-500">เหตุผล:</strong> {selectedStatusOrder.order.cancel}
+            </p>
+
+            <p className="text-lg font-semibold text-gray-800 mb-2">หมายเหตุ</p>
+            <p className="text-base text-gray-700 mb-4">
+              ท่านสามารถติดต่อรับเงินคืน โปรดติดต่อพนักงาน
+            </p>
+            <p className="text-base text-gray-700">
+              <strong className="font-bold text-blue-500">Line:</strong> @cs.shop124
+            </p>
+          </div>
+        )}
+
+
+  {/* Conditional Display for Cancellation Reason */}
+  {selectedStatusOrder.order.status === 'ยกเลิกโดยทางร้าน' && selectedStatusOrder.pay === 'จ่ายปลายทาง'  && (
+          <div className="p-6 bg-white rounded-lg shadow-md border border-gray-200 mt-6">
+            <p className="text-lg font-semibold text-gray-800 mb-2">เหตุผลการยกเลิกคำสั่งซื้อ</p>
+            <p className="text-base text-gray-700 mb-4">
+              <strong className="font-bold text-red-500">เหตุผล:</strong> {selectedStatusOrder.order.cancel}
+            </p>
+
+            
+          </div>
+        )}
         
       </div>
     </div>

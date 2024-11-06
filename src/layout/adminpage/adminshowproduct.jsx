@@ -121,7 +121,7 @@ export default function AdminHome() {
     <div>
       <div className="flex flex-col justify-center items-center py-10">
         <div>
-          <p className="text-[50px] font-semibold text-center">Admin</p>
+          <p className="text-[50px] font-semibold text-center">จัดการสินค้า</p>
         </div>
         <div>
           <Link to={`/Add`}>

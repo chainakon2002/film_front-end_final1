@@ -9,6 +9,16 @@ const OrdersPage = () => {
     const [selectedSlip, setSelectedSlip] = useState(null);
     const [editedOrder, setEditedOrder] = useState(null);
     const [activeTab, setActiveTab] = useState('รอดำเนินการ'); // For managing tabs
+    const [loadingAccept, setLoadingAccept] = useState(null); // Loading state สำหรับการรับคำสั่ง
+   
+    const [loadingShipping, setLoadingShipping] = useState(false); 
+    const [cancelModalOpen, setCancelModalOpen] = useState(false);
+    const [cancelReason, setCancelReason] = useState('');
+    const [orderToCancel, setOrderToCancel] = useState(null);
+    const [loadingCancel, setLoadingCancel] = useState(false);
+    const [statusCount, setStatusCount] = useState({});
+    
+    
     const token = localStorage.getItem('token');
 
     useEffect(() => {
@@ -19,7 +29,8 @@ const OrdersPage = () => {
                 });
                 // Sorting orders by date in descending order
                 const sortedOrders = response.data.sort((a, b) => new Date(b.order.date) - new Date(a.order.date));
-                setOrders(sortedOrders);
+        setOrders(sortedOrders);
+        countOrderStatus(sortedOrders);
             } catch (error) {
                 console.error('Error fetching orders:', error);
             }
@@ -52,6 +63,7 @@ const OrdersPage = () => {
     };
 
     const handleStatusChange = async (orderId, newStatus) => {
+        setLoadingAccept(orderId); 
         try {
             const response = await axios.put(
                 `http://localhost:8889/auth/updateorderstatus`,
@@ -65,8 +77,11 @@ const OrdersPage = () => {
             }
         } catch (error) {
             console.error('Error updating order status:', error);
+        } finally {
+            setLoadingAccept(null); 
         }
     };
+    
 
     const handleShippingUpdate = (orderId, newShippingCompany, newTrackingNumber) => {
         setEditedOrder(prev => ({
@@ -79,6 +94,7 @@ const OrdersPage = () => {
 
     const confirmShippingUpdate = async () => {
         if (editedOrder) {
+            setLoadingShipping(true); // Set loading state
             try {
                 const response = await axios.put(
                     `http://localhost:8889/auth/updateshipping`,
@@ -86,13 +102,11 @@ const OrdersPage = () => {
                         orderId: editedOrder.orderId, 
                         shippingCompany: editedOrder.shippingCompany, 
                         trackingNumber: editedOrder.trackingNumber,
-                        status: 'กำลังจัดส่ง' // Ensure the status is updated here
+                        status: 'กำลังจัดส่ง' // Update status
                     },
                     { headers: { Authorization: `Bearer ${token}` } }
                 );
-                console.log('API Response:', response.data); // Log API response
                 if (response.status === 200) {
-                    // Update the status and shipping details in local state
                     setOrders(prevOrders => prevOrders.map(order =>
                         order.orderId === editedOrder.orderId
                             ? { 
@@ -101,23 +115,80 @@ const OrdersPage = () => {
                                     ...order.order, 
                                     shippingCompany: editedOrder.shippingCompany, 
                                     trackingNumber: editedOrder.trackingNumber,
-                                    status: 'กำลังจัดส่ง' // Update status here
+                                    status: 'กำลังจัดส่ง' // Update status
                                 }
                             }
                             : order
                     ));
                     setEditedOrder(null);
+                    // Refresh the page
+                    window.location.reload();
                 }
             } catch (error) {
                 console.error('Error updating shipping information:', error);
+            } finally {
+                setLoadingShipping(false); // Reset loading state
             }
         }
     };
+
+    const handleCancelOrder = async () => {
+        setLoadingCancel(true); // Show the loading spinner
+        try {
+          const token = localStorage.getItem("token");
+          await axios.put(
+            'http://localhost:8889/auth/cancel',
+            { 
+              orderId: orderToCancel.orderId, 
+              status: 'ยกเลิกโดยทางร้าน', 
+              cancel: cancelReason
+            },
+            { headers: { Authorization: `Bearer ${token}` } }
+          );
+        
+          setOrders((prevOrders) =>
+            prevOrders.map((o) =>
+              o.orderId === orderToCancel.orderId
+                ? { ...o, order: { ...o.order, status: 'ยกเลิกโดยทางร้าน', cancel: cancelReason } }
+                : o
+            )
+          );
+          handleCloseCancelModal();
+        } catch (error) {
+          console.error('Error canceling order:', error);
+        } finally {
+          setLoadingCancel(false); 
+        }
+      };
+      
     
+      const handleOpenCancelModal = (order) => {
+        setOrderToCancel(order);
+        setCancelModalOpen(true);
+      };
+      
+      const handleCloseCancelModal = () => {
+        setCancelModalOpen(false);
+        setCancelReason('');
+        setOrderToCancel(null);
+      };
+    
+    
+      const countOrderStatus = (orders) => {
+        // Count the number of orders by status
+        const count = orders.reduce((acc, order) => {
+          const status = order.order.status; // ใช้ order.order.status ตามที่คุณระบุ
+          acc[status] = (acc[status] || 0) + 1;
+          return acc;
+        }, {});
+    
+        setStatusCount(count);
+      };
     
 
     const handleAcceptOrder = (orderId) => {
         handleStatusChange(orderId, 'กำลังเตรียมจัดส่ง');
+        window.location.reload()
     };
 
     const filteredOrders = orders.filter(order => order.order.status === activeTab);
@@ -127,18 +198,30 @@ const OrdersPage = () => {
             <div className="w-full max-w-7xl px-4 md:px-5 lg-6 mx-auto">
                 <h2 className="font-manrope font-bold text-3xl sm:text-4xl leading-10 text-black mb-11">รายการสั่งซื้อ</h2>
 
-                {/* Tab Navigation */}
-                <div className="flex space-x-4 mb-8">
-                    {['รอดำเนินการ', 'กำลังเตรียมจัดส่ง', 'กำลังจัดส่ง', 'จัดส่งแล้ว'].map(status => (
-                        <button
-                            key={status}
-                            onClick={() => setActiveTab(status)}
-                            className={`py-2 px-4 rounded-lg ${activeTab === status ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-700'}`}
-                        >
-                            {status}
-                        </button>
-                    ))}
-                </div>
+               {/* Tab Navigation */}
+               <div className="flex justify-center space-x-4 mb-8">
+  {['ยกเลิกแล้ว', 'ยกเลิกโดยทางร้าน', 'รอดำเนินการ', 'กำลังเตรียมจัดส่ง', 'กำลังจัดส่ง', 'จัดส่งสำเร็จ'].map(status => {
+    const count = statusCount[status] || 0;
+    return (
+      <button
+        key={status}
+        onClick={() => setActiveTab(status)}
+        className={`relative py-2 px-4 rounded-[13px] ${activeTab === status ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-700'}`}
+      >
+        <span className="relative flex items-center">
+          {status}
+          {count > 0 && (
+            <span className="absolute top-[-5px] right-[-10px] translate-x-1/2 -translate-y-1/2 bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
+              {count}
+            </span>
+          )}
+        </span>
+      </button>
+    );
+  })}
+</div>
+
+    
 
                 {/* Orders List */}
                 {filteredOrders.length === 0 && <p>No orders found for {activeTab}.</p>}
@@ -153,13 +236,15 @@ const OrdersPage = () => {
                     >
                         {/* Order Information */}
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-8 py-6 border-y border-gray-100 mb-6">
+
+
                             {/* Order Details */}
                             <div className="box">
                                 <p className="font-normal text-base leading-7 text-gray-500 mb-3">วันที่สั่งซื้อ</p>
                                 <h6 className="font-semibold font-manrope text-2xl leading-9 text-black">{formatDate(order.order.date)}</h6>
                             </div>
                             <div className="box">
-                                <p className="font-normal text-base leading-7 text-gray-500 mb-3">Order</p>
+                                <p className="font-normal text-base leading-7 text-gray-500 mb-3">รหัสคำสั่งซื้อ</p>
                                 <h6 className="font-semibold font-manrope text-2xl leading-9 text-black">#{order.orderId}</h6>
                             </div>
                             <div className="box cursor-pointer" onClick={() => handleOpenSlip(order.slip)}>
@@ -209,14 +294,26 @@ const OrdersPage = () => {
                                 <span className="text-red-600"> {order.order.status}</span>
                             </p>
 
-                            {order.order.status === 'รอดำเนินการ' && (
-                                <button
-                                    onClick={() => handleAcceptOrder(order.orderId)}
-                                    className="bg-green-500 text-white py-2 px-4 rounded-lg"
-                                >
-                                    รับคำสั่งซื้อ
-                                </button>
-                            )}
+                            <div className="flex space-x-4">
+  {order.order.status === 'รอดำเนินการ' && (
+    <button
+      onClick={() => handleAcceptOrder(order.orderId)}
+      className="bg-green-500 text-white py-2 px-4 rounded-[20px]"
+    >
+      รับคำสั่งซื้อ
+    </button>
+  )}
+
+  {order.order.status === "รอดำเนินการ" && (
+    <button
+      onClick={() => handleOpenCancelModal(order)}
+      className="bg-red-500 text-white py-2 px-4 rounded-[20px]"
+    >
+      ยกเลิกคำสั่งซื้อ
+    </button>
+  )}
+</div>
+
 
                             {order.order.status === 'กำลังเตรียมจัดส่ง' && (
                                 <button
@@ -230,7 +327,7 @@ const OrdersPage = () => {
                     </motion.div>
                 ))}
 
-                {/* Shipping Update Confirmation */}
+                
                 {editedOrder && (
                     <div className="fixed inset-0 flex items-center justify-center bg-gray-700 bg-opacity-50 z-50">
                         <div className="bg-white p-6 rounded-lg shadow-lg">
@@ -285,7 +382,7 @@ const OrdersPage = () => {
                 className="absolute top-4 right-4 text-gray-600 text-2xl"
                 onClick={handleCloseDetails}
               >
-                ×
+                
               </button>
               <h2 className="text-2xl font-bold mb-6">รายละเอียดที่อยู่</h2>
               <p className="mb-2"><strong>ชื่อ:</strong> {selectedOrder.name}</p>
@@ -327,6 +424,54 @@ const OrdersPage = () => {
             </div>
           </div>
         )}
+
+
+        {/* Cancel Modal */}
+{cancelModalOpen && (
+  <div className="fixed inset-0 flex items-center justify-center z-50">
+    <div
+      className="fixed inset-0 bg-black opacity-50"
+      onClick={handleCloseCancelModal}
+    />
+    <div
+      className="bg-white p-12 rounded-lg shadow-lg z-10 relative max-w-3xl w-full"
+      style={{ maxHeight: '80vh', overflowY: 'auto' }}
+    >
+      <button
+        className="absolute top-4 right-4 text-gray-600 text-2xl"
+        onClick={handleCloseCancelModal}
+      >
+        ×
+      </button>
+      <h2 className="text-2xl font-bold mb-6">เหตุผลการยกเลิกคำสั่งซื้อ</h2>
+      <textarea
+        value={cancelReason}
+        onChange={(e) => setCancelReason(e.target.value)}
+        className="w-full h-32 p-2 border border-gray-300 rounded-lg mb-6"
+        placeholder="กรุณากรอกเหตุผลการยกเลิก"
+      />
+      <div className="flex justify-end">
+        <button
+          onClick={handleCancelOrder}
+          className="px-4 py-2 bg-red-500 text-white font-semibold rounded-lg"
+          disabled={loadingCancel} // Disable the button while loading
+        >
+          {loadingCancel ? (
+            <div className="flex items-center justify-center">
+              <svg className="animate-spin h-5 w-5 mr-3 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 0 1 16 0 8 8 0 0 1-16 0z"></path>
+              </svg>
+              Loading...
+            </div>
+          ) : (
+            'ยืนยันการยกเลิก'
+          )}
+        </button>
+      </div>
+    </div>
+  </div>
+)}
 
 
 

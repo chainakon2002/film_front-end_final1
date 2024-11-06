@@ -102,16 +102,16 @@ function Cart() {
                 <span className="sr-only">Select</span>
               </th>
               <th scope="col" className="px-6 py-3">
-                Product
+                สินค้า
               </th>
               <th scope="col" className="px-6 py-3">
-                Qty
+                จำนวน
               </th>
               <th scope="col" className="px-6 py-3">
-                Price
+                ราคา
               </th>
               <th scope="col" className="px-6 py-3">
-                Action
+                
               </th>
             </tr>
           </thead>
@@ -169,14 +169,14 @@ function Cart() {
                   </div>
                 </td>
                 <td className="px-6 py-4 font-semibold text-gray-900">
-                  ${carts.price.toFixed(2)}
+                  {carts.price.toFixed(2)}
                 </td>
                 <td className="px-6 py-4">
                   <button
                     onClick={() => deleteCart(carts.id)}
                     className="text-red-600 hover:underline"
                   >
-                    Remove
+                    ลบ
                   </button>
                 </td>
               </tr>

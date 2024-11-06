@@ -140,7 +140,7 @@ export default function LoginForm() {
 
     <label className="form-control w-full max-w-xs">
       <input
-        placeholder="Username"
+        placeholder="ชื่อผู้ใช้"
         type="text"
         className="input input-bordered w-full max-w-xs border-[#bbc4cf] mt-5 block rounded-[18px]"
         name="username"
@@ -152,7 +152,7 @@ export default function LoginForm() {
     <label className="form-control w-full max-w-xs">
       <input
         type="password"
-        placeholder="Password"
+        placeholder="รหัสผ่าน"
         className="input input-bordered w-full max-w-xs border-[#bbc4cf] mt-5 block rounded-[18px]"
         name="password"
         value={input.password}
@@ -165,7 +165,7 @@ export default function LoginForm() {
         type="submit"
         className="rounded-full bg-[#3D5FD9] text-[#F5F7FF] w-[15rem] p-3 hover:bg-[#2347C5]"
       >
-        Login
+        ลงชื่อเข้าใช้
       </button>
     </div>
 

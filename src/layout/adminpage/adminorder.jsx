@@ -12,7 +12,11 @@ const OrdersPage = () => {
     const [loadingAccept, setLoadingAccept] = useState(null); // Loading state สำหรับการรับคำสั่ง
    
     const [loadingShipping, setLoadingShipping] = useState(false); 
-
+    const [cancelModalOpen, setCancelModalOpen] = useState(false);
+    const [cancelReason, setCancelReason] = useState('');
+    const [orderToCancel, setOrderToCancel] = useState(null);
+    const [loadingCancel, setLoadingCancel] = useState(false);
+    const [statusCount, setStatusCount] = useState({});
     
     
     const token = localStorage.getItem('token');
@@ -25,7 +29,8 @@ const OrdersPage = () => {
                 });
                 // Sorting orders by date in descending order
                 const sortedOrders = response.data.sort((a, b) => new Date(b.order.date) - new Date(a.order.date));
-                setOrders(sortedOrders);
+        setOrders(sortedOrders);
+        countOrderStatus(sortedOrders);
             } catch (error) {
                 console.error('Error fetching orders:', error);
             }
@@ -126,9 +131,59 @@ const OrdersPage = () => {
             }
         }
     };
+
+    const handleCancelOrder = async () => {
+        setLoadingCancel(true); // Show the loading spinner
+        try {
+          const token = localStorage.getItem("token");
+          await axios.put(
+            'http://localhost:8889/auth/cancel',
+            { 
+              orderId: orderToCancel.orderId, 
+              status: 'ยกเลิกโดยทางร้าน', 
+              cancel: cancelReason
+            },
+            { headers: { Authorization: `Bearer ${token}` } }
+          );
+        
+          setOrders((prevOrders) =>
+            prevOrders.map((o) =>
+              o.orderId === orderToCancel.orderId
+                ? { ...o, order: { ...o.order, status: 'ยกเลิกโดยทางร้าน', cancel: cancelReason } }
+                : o
+            )
+          );
+          handleCloseCancelModal();
+        } catch (error) {
+          console.error('Error canceling order:', error);
+        } finally {
+          setLoadingCancel(false); 
+        }
+      };
+      
+    
+      const handleOpenCancelModal = (order) => {
+        setOrderToCancel(order);
+        setCancelModalOpen(true);
+      };
+      
+      const handleCloseCancelModal = () => {
+        setCancelModalOpen(false);
+        setCancelReason('');
+        setOrderToCancel(null);
+      };
     
     
+      const countOrderStatus = (orders) => {
+        // Count the number of orders by status
+        const count = orders.reduce((acc, order) => {
+          const status = order.order.status; // ใช้ order.order.status ตามที่คุณระบุ
+          acc[status] = (acc[status] || 0) + 1;
+          return acc;
+        }, {});
     
+        setStatusCount(count);
+      };
     
 
     const handleAcceptOrder = (orderId) => {
@@ -143,18 +198,30 @@ const OrdersPage = () => {
             <div className="w-full max-w-7xl px-4 md:px-5 lg-6 mx-auto">
                 <h2 className="font-manrope font-bold text-3xl sm:text-4xl leading-10 text-black mb-11">รายการสั่งซื้อ</h2>
 
-                {/* Tab Navigation */}
-                <div className="flex space-x-4 mb-8">
-                    {['ยกเลิกแล้ว','รอดำเนินการ', 'กำลังเตรียมจัดส่ง', 'กำลังจัดส่ง', 'จัดส่งสำเร็จ'].map(status => (
-                        <button
-                            key={status}
-                            onClick={() => setActiveTab(status)}
-                            className={`py-2 px-4 rounded-lg ${activeTab === status ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-700'}`}
-                        >
-                            {status}
-                        </button>
-                    ))}
-                </div>
+               {/* Tab Navigation */}
+               <div className="flex justify-center space-x-4 mb-8">
+  {['ยกเลิกแล้ว', 'ยกเลิกโดยทางร้าน', 'รอดำเนินการ', 'กำลังเตรียมจัดส่ง', 'กำลังจัดส่ง', 'จัดส่งสำเร็จ'].map(status => {
+    const count = statusCount[status] || 0;
+    return (
+      <button
+        key={status}
+        onClick={() => setActiveTab(status)}
+        className={`relative py-2 px-4 rounded-[13px] ${activeTab === status ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-700'}`}
+      >
+        <span className="relative flex items-center">
+          {status}
+          {count > 0 && (
+            <span className="absolute top-[-5px] right-[-10px] translate-x-1/2 -translate-y-1/2 bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
+              {count}
+            </span>
+          )}
+        </span>
+      </button>
+    );
+  })}
+</div>
+
+    
 
                 {/* Orders List */}
                 {filteredOrders.length === 0 && <p>No orders found for {activeTab}.</p>}
@@ -169,6 +236,8 @@ const OrdersPage = () => {
                     >
                         {/* Order Information */}
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-8 py-6 border-y border-gray-100 mb-6">
+
+
                             {/* Order Details */}
                             <div className="box">
                                 <p className="font-normal text-base leading-7 text-gray-500 mb-3">วันที่สั่งซื้อ</p>
@@ -233,6 +302,17 @@ const OrdersPage = () => {
                                     รับคำสั่งซื้อ
                                 </button>
                             )}
+
+
+
+{order.order.status === "รอดำเนินการ" && (
+  <button
+    onClick={() => handleOpenCancelModal(order)}
+    className="px-2 py-4 bg-red-500 text-white text-[20px] font-medium rounded-[15px]"
+  >
+    ยกเลิกคำสั่งซื้อ
+  </button>
+)}
 
                             {order.order.status === 'กำลังเตรียมจัดส่ง' && (
                                 <button
@@ -325,7 +405,7 @@ const OrdersPage = () => {
               onClick={handleCloseSlip}
             />
             <div
-              className="bg-white p-6 rounded-lg shadow-lg z-10 relative max-w-xl w-full"
+              className="bg-white p-12 rounded-lg shadow-lg z-10 relative max-w-[600px] flex flex-col items-center"
               style={{ maxHeight: '80vh', overflowY: 'auto' }}
             >
               <button
@@ -335,14 +415,64 @@ const OrdersPage = () => {
                 ×
               </button>
               <h2 className="text-2xl font-bold mb-6">หลักฐานการโอนเงิน</h2>
-              <img
-                src={selectedSlip}
-                alt="หลักฐานการโอนเงิน"
-                className="w-full rounded-lg object-cover mb-2"
-              />
+              <div className="flex justify-center w-full">
+        <img
+          src={selectedSlip}
+          alt="Slip"
+          className="max-w-full max-h-[60vh] object-contain"
+        />
+      </div>
             </div>
           </div>
         )}
+
+
+        {/* Cancel Modal */}
+{cancelModalOpen && (
+  <div className="fixed inset-0 flex items-center justify-center z-50">
+    <div
+      className="fixed inset-0 bg-black opacity-50"
+      onClick={handleCloseCancelModal}
+    />
+    <div
+      className="bg-white p-12 rounded-lg shadow-lg z-10 relative max-w-3xl w-full"
+      style={{ maxHeight: '80vh', overflowY: 'auto' }}
+    >
+      <button
+        className="absolute top-4 right-4 text-gray-600 text-2xl"
+        onClick={handleCloseCancelModal}
+      >
+        ×
+      </button>
+      <h2 className="text-2xl font-bold mb-6">เหตุผลการยกเลิกคำสั่งซื้อ</h2>
+      <textarea
+        value={cancelReason}
+        onChange={(e) => setCancelReason(e.target.value)}
+        className="w-full h-32 p-2 border border-gray-300 rounded-lg mb-6"
+        placeholder="กรุณากรอกเหตุผลการยกเลิก"
+      />
+      <div className="flex justify-end">
+        <button
+          onClick={handleCancelOrder}
+          className="px-4 py-2 bg-red-500 text-white font-semibold rounded-lg"
+          disabled={loadingCancel} // Disable the button while loading
+        >
+          {loadingCancel ? (
+            <div className="flex items-center justify-center">
+              <svg className="animate-spin h-5 w-5 mr-3 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 0 1 16 0 8 8 0 0 1-16 0z"></path>
+              </svg>
+              Loading...
+            </div>
+          ) : (
+            'ยืนยันการยกเลิก'
+          )}
+        </button>
+      </div>
+    </div>
+  </div>
+)}
 
 
 

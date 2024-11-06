@@ -119,12 +119,7 @@ const UserProfile = () => {
                 </div>
               </div>
               <div className="flex flex-wrap my-auto">
-                <a
-                  href="javascript:void(0)"
-                  className="inline-block px-6 py-3 mr-3 text-base font-medium leading-normal text-center align-middle transition-colors duration-150 ease-in-out border-0 shadow-none cursor-pointer rounded-2xl text-muted bg-light border-light hover:bg-light-dark active:bg-light-dark focus:bg-light-dark"
-                >
-                  Follow
-                </a>
+        
                 <button
   onClick={handleEditClick}
   className="inline-block px-6 py-3 text-base font-medium leading-normal text-center text-white align-middle transition-colors duration-150 ease-in-out border-0 shadow-none cursor-pointer rounded-2xl bg-primary hover:bg-primary-dark active:bg-primary-dark focus:bg-primary-dark"

@@ -19,7 +19,7 @@ const Sidebar = () => {
             <img
               src="/src/assets/DISNEY copy.png"
               alt=""
-              className="h-[100px] w-[150px] "
+              className="h-[100px] w-[109px] "
             />
             <a className="btn btn-ghost text-xl " sty le={{ marginLeft: '-8px' }}>
               CS.SHOP | {user?.id ? user.username : ''}

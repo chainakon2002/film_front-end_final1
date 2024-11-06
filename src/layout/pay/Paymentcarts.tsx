@@ -205,7 +205,7 @@ function Paymentcarts() {
 
     const handleAddressSelect = (address) => {
         setSelectedAddress(address);
-        localStorage.setItem('selectedAddress', JSON.stringify(address));
+       
         setShowAddressModal(false);
     };
 
@@ -303,6 +303,23 @@ function Paymentcarts() {
   </div>
 </form>
 
+
+
+{selectedAddress ? (
+  <div>
+    
+    
+  </div>
+) : (
+  <button
+  onClick={() => setShowAddressModal(true)}
+  className="text-[20px] font-semibold text-gray-800 mb-2 mt-[20px]"
+>
+  เลือกที่อยู่
+</button>
+
+)}
+
 {selectedAddress && (
   <div className="bg-white p-4 rounded-lg shadow-sm mt-4">
     <h2 className="text-[20px] font-semibold text-gray-800 mb-2">ที่อยู่</h2>
@@ -345,7 +362,7 @@ function Paymentcarts() {
     <div className="bg-white p-6 rounded-lg shadow-lg max-w-[600px] w-full">
       <h2 className="text-xl font-medium text-gray-800 mb-4">เลือกที่อยู่</h2>
       <form>
-        {/* ตัวเลือกที่ 1 */}
+        
         {addresses.map((address) => (
           <div key={address.id} className="relative mb-4">
             <input

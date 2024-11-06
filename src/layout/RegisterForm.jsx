@@ -49,44 +49,35 @@ export default function RegisterForm() {
   };
 
   return (
-    <div className="flex items-center justify-center h-screen mt-[100px]">
+    <div className="flex items-center justify-center h-screen mt-[20px]">
       <div className="text-3xl mb-5"></div>
       <form
-        className="flex h-[calc(110vh-60px)] flex-col justify-center items-center outline-none border-10 w-[30rem] h-[35rem] rounded-[25px] shadow-md mt-20 transition duration-500 ease-in-out transform animate__animated animate__fadeIn animate__faster"
+        className="bg-white p-6 rounded-[20px] shadow-lg  max-w-[700px] w-full max-h-[90vh] overflow-y-auto transition-transform transform hover:scale-105"
         onSubmit={hdlSubmit}
       >
         <p className="font-semibold text-[24px] text-[#5473E3] text-center">สมัครสมาชิก</p>
+        
+        <div  className='grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 w-[600px]'>
         <label className="form-control w-full max-w-xs">
           <div className="label">
-            <span className="label-text">Username</span>
+            <span className="label-text">ชื่อผู้ใช้</span>
           </div>
           <input
             type="text"
-            className="input input-bordered w-full max-w-xs"
+            className="w-full bg-gray-100 text-gray-900 p-3 rounded-lg focus:outline-none focus:shadow-outline"
             name="username"
             value={input.username}
             onChange={hdlChange}
           />
         </label>
+
         <label className="form-control w-full max-w-xs">
           <div className="label">
-            <span className="label-text">E-mail</span>
-          </div>
-          <input
-            type="email"
-            className="input input-bordered w-full max-w-xs"
-            name="email"
-            value={input.email}
-            onChange={hdlChange}
-          />
-        </label>
-        <label className="form-control w-full max-w-xs">
-          <div className="label">
-            <span className="label-text">Name</span>
+            <span className="label-text">ชื่อ</span>
           </div>
           <input
             type="text"
-            className="input input-bordered w-full max-w-xs"
+            className="w-full bg-gray-100 text-gray-900 p-3 rounded-lg focus:outline-none focus:shadow-outline"
             name="name"
             value={input.name}
             onChange={hdlChange}
@@ -94,35 +85,59 @@ export default function RegisterForm() {
         </label>
         <label className="form-control w-full max-w-xs">
           <div className="label">
-            <span className="label-text">Last Name</span>
+            <span className="label-text">นามสกุล</span>
           </div>
           <input
             type="text"
-            className="input input-bordered w-full max-w-xs"
+            className="w-full bg-gray-100 text-gray-900 p-3 rounded-lg focus:outline-none focus:shadow-outline"
             name="lastname"
             value={input.lastname}
             onChange={hdlChange}
           />
         </label>
+
+
+        </div>
+
+        <div className='grid grid-cols-1 md:grid-cols-2 gap-4 mb-4 '>
         <label className="form-control w-full max-w-xs">
           <div className="label">
-            <span className="label-text">Phone</span>
+            <span className="label-text">อีเมล</span>
+          </div>
+          <input
+            type="email"
+            className="w-full bg-gray-100 text-gray-900 p-3 rounded-lg focus:outline-none focus:shadow-outline"
+            name="email"
+            value={input.email}
+            onChange={hdlChange}
+          />
+        </label>
+        
+        
+        <label className="form-control w-full max-w-xs">
+          <div className="label">
+            <span className="label-text">เบอร์โทรศัพท์</span>
           </div>
           <input
             type="text"
-            className="input input-bordered w-full max-w-xs"
+            className="w-full bg-gray-100 text-gray-900 p-3 rounded-lg focus:outline-none focus:shadow-outline"
             name="phone"
             value={input.phone}
             onChange={hdlChange}
           />
         </label>
+
+        </div>
+
+        <div className='grid grid-cols-1 md:grid-cols-2 gap-4 mb-4 '>
+
         <label className="form-control w-full max-w-xs">
           <div className="label">
-            <span className="label-text">Password</span>
+            <span className="label-text">รหัสผ่าน</span>
           </div>
           <input
             type="password"
-            className="input input-bordered w-full max-w-xs"
+            className="w-full bg-gray-100 text-gray-900 p-3 rounded-lg focus:outline-none focus:shadow-outline"
             name="password"
             value={input.password}
             onChange={hdlChange}
@@ -130,19 +145,27 @@ export default function RegisterForm() {
         </label>
         <label className="form-control w-full max-w-xs">
           <div className="label">
-            <span className="label-text">Confirm Password</span>
+            <span className="label-text">ยืนยันรหัสผ่าน</span>
           </div>
           <input
             type="password"
-            className="input input-bordered w-full max-w-xs"
+            className="w-full bg-gray-100 text-gray-900 p-3 rounded-lg focus:outline-none focus:shadow-outline"
             name="confirmPassword"
             value={input.confirmPassword}
             onChange={hdlChange}
           />
         </label>
-        <div className="flex gap-5">
-          <button type="submit" className="btn btn-outline btn-info mt-7 transform transition-transform duration-300 ease-in-out hover:scale-105">
-            ยืนยัน
+
+
+        </div>
+
+
+
+
+        
+        <div className="flex items-center justify-center mt-[40px]">
+          <button type="submit" className="w-full md:w-1/3 bg-blue-700 text-gray-100 p-3 rounded-[20px] font-bold uppercase text-sm focus:outline-none focus:shadow-outline transition-colors duration-300 hover:bg-blue-800">
+            สมัครสมาชิก
           </button>
         </div>
 
