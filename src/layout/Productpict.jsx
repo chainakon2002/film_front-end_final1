@@ -31,7 +31,7 @@ const Productpict = () => {
     const fetchOrders = async () => {
       try {
         const token = localStorage.getItem("token");
-        const response = await axios.get('http://localhost:8889/payment/paymentuser', {
+        const response = await axios.get('https://ecomapi2-production.up.railway.app/payment/paymentuser', {
           headers: { Authorization: `Bearer ${token}` },
         });
 
@@ -69,7 +69,7 @@ const Productpict = () => {
     try {
       const token = localStorage.getItem("token");
       await axios.put(
-        'http://localhost:8889/auth/updateorderstatus',
+        'https://ecomapi2-production.up.railway.app/auth/updateorderstatus',
         { 
           orderId: order.orderId, 
           status: 'จัดส่งสำเร็จ' 
@@ -95,7 +95,7 @@ const Productpict = () => {
     try {
       const token = localStorage.getItem("token");
       await axios.put(
-        'http://localhost:8889/auth/cancel',
+        'https://ecomapi2-production.up.railway.app/auth/cancel',
         { 
           orderId: orderToCancel.orderId, 
           status: 'ยกเลิกแล้ว', 

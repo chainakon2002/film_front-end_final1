@@ -15,7 +15,7 @@ const OrdersPage = () => {
     useEffect(() => {
         const fetchOrders = async () => {
             try {
-                const response = await axios.get('http://localhost:8889/auth/getorderadmin', {
+                const response = await axios.get('https://ecomapi2-production.up.railway.app/auth/getorderadmin', {
                     headers: {
                         Authorization: `Bearer ${token}`,
                     },

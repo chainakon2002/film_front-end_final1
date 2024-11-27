@@ -46,7 +46,7 @@ export default function AdminProduct() {
     }
 
     try {
-      const rs = await axios.post('http://localhost:8889/auth/product', formData, {
+      const rs = await axios.post('https://ecomapi2-production.up.railway.app/auth/product', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
